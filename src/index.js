@@ -126,9 +126,9 @@ const handler = (performaceMode) => ({
 })
 
 class SubX {
-  constructor (modelObj = {}, performaceMode = false) {
+  constructor (modelObj = {}) {
     class Model {
-      constructor (obj = {}) {
+      constructor (obj = {}, performaceMode = false) {
         const newObj = R.empty(obj)
         R.forEach(name => { newObj[name] = new Subject() }, EVENT_NAMES)
         newObj.$ = newObj.set$
@@ -172,7 +172,7 @@ class SubX {
 }
 
 const DefaultModel = new SubX({})
-SubX.create = (obj = {}) => new DefaultModel(obj)
+SubX.create = (obj = {}, performaceMode) => new DefaultModel(obj, performaceMode)
 SubX.runAndMonitor = runAndMonitor
 SubX.autoRun = autoRun
 
