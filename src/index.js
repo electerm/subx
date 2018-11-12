@@ -8,13 +8,13 @@ import uuid from './uuid'
 const EVENT_NAMES = ['set$', 'delete$', 'get$', 'has$', 'keys$', 'compute_begin$', 'compute_finish$', 'stale$', 'transaction$']
 const RESERVED_PROPERTIES = ['$', '__isSubX__', '__id__', '__emitEvent__', '__parents__', '__cache__', ...EVENT_NAMES]
 
-const handler = {
+const handler = (performaceMode) => ({
   set: (target, prop, val, receiver) => {
     if (RESERVED_PROPERTIES.indexOf(prop) !== -1) {
       prop = `_${prop}` // prefix reserved keywords with underscore
     }
     const oldVal = target[prop]
-    if (val === null || typeof val !== 'object') { // simple value such as integer
+    if (performaceMode || val === null || typeof val !== 'object') { // simple value such as integer
       target[prop] = val
       target.__emitEvent__('set$', { type: 'SET', path: [prop], id: uuid() })
       return true
@@ -123,10 +123,10 @@ const handler = {
   preventExtensions: target => {
     return false // disallow preventExtensions
   }
-}
+})
 
 class SubX {
-  constructor (modelObj = {}) {
+  constructor (modelObj = {}, performaceMode = false) {
     class Model {
       constructor (obj = {}) {
         const newObj = R.empty(obj)
@@ -151,7 +151,7 @@ class SubX {
           })
         }
 
-        const proxy = new Proxy(newObj, handler)
+        const proxy = new Proxy(newObj, handler(performaceMode))
         R.pipe(
           R.concat(R.map(key => [modelObj, key], R.keys(modelObj))),
           R.forEach(([target, prop]) => {
