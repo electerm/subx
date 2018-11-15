@@ -2,7 +2,7 @@ import { Subject } from 'rxjs'
 import * as R from 'ramda'
 import util from 'util'
 
-import { computed, runAndMonitor, autoRun } from './monitor'
+//import { computed, runAndMonitor, autoRun } from './monitor'
 import uuid from './uuid'
 
 const EVENT_NAMES = ['set$', 'delete$', 'get$', 'has$', 'keys$', 'compute_begin$', 'compute_finish$', 'stale$', 'transaction$']
@@ -54,36 +54,36 @@ const handler = (performaceMode) => ({
             R.reject(k => RESERVED_PROPERTIES.indexOf(k) !== -1),
             R.reduce((obj, k) => Object.defineProperty(obj, k, Object.getOwnPropertyDescriptor(receiver, k)))({})
           )(receiver)
-      case 'startTransaction':
-        return () => { target.__cache__ = [] }
-      case 'endTransaction':
-        return name => {
-          const event = { type: 'TRANSACTION', name, path: [], events: target.__cache__, id: uuid() }
-          delete target.__cache__
-          if (name) {
-            event.name = name
-          }
-          target.__emitEvent__('transaction$', event)
-        }
-      case 'copyWithin': // https://www.w3schools.com/jsref/jsref_obj_array.asp
-      case 'fill':
-      case 'pop':
-      case 'push':
-      case 'reverse':
-      case 'shift':
-      case 'sort':
-      case 'splice':
-      case 'unshift':
-        if (Array.isArray(target)) {
-          const f = (...args) => {
-            receiver.startTransaction()
-            const r = target[prop].bind(receiver)(...args)
-            receiver.endTransaction(prop)
-            return r
-          }
-          return f
-        }
-        return target[prop]
+      // case 'startTransaction':
+      //   return () => { target.__cache__ = [] }
+      // case 'endTransaction':
+      //   return name => {
+      //     const event = { type: 'TRANSACTION', name, path: [], events: target.__cache__, id: uuid() }
+      //     delete target.__cache__
+      //     if (name) {
+      //       event.name = name
+      //     }
+      //     target.__emitEvent__('transaction$', event)
+      //   }
+      // case 'copyWithin': // https://www.w3schools.com/jsref/jsref_obj_array.asp
+      // case 'fill':
+      // case 'pop':
+      // case 'push':
+      // case 'reverse':
+      // case 'shift':
+      // case 'sort':
+      // case 'splice':
+      // case 'unshift':
+      //   if (Array.isArray(target)) {
+      //     const f = (...args) => {
+      //       receiver.startTransaction()
+      //       const r = target[prop].bind(receiver)(...args)
+      //       receiver.endTransaction(prop)
+      //       return r
+      //     }
+      //     return f
+      //   }
+      //   return target[prop]
       default:
         const val = target[prop]
         if (typeof val !== 'function' && RESERVED_PROPERTIES.indexOf(prop) === -1) {
@@ -136,12 +136,12 @@ class SubX {
         newObj.__id__ = uuid()
         newObj.__parents__ = {}
         newObj.__emitEvent__ = (name, event) => {
-          if (newObj.__cache__) {
-            if (event.type === 'SET' || event.type === 'DELETE') {
-              newObj.__cache__.push(event)
-            }
-            return
-          }
+          // if (newObj.__cache__) {
+          //   if (event.type === 'SET' || event.type === 'DELETE') {
+          //     newObj.__cache__.push(event)
+          //   }
+          //   return
+          // }
           if (newObj[name].observers.length > 0) {
             newObj[name].next(event)
           }
@@ -152,18 +152,18 @@ class SubX {
         }
 
         const proxy = new Proxy(newObj, handler(performaceMode))
-        R.pipe(
-          R.concat(R.map(key => [modelObj, key], R.keys(modelObj))),
-          R.forEach(([target, prop]) => {
-            const descriptor = Object.getOwnPropertyDescriptor(target, prop)
-            if ('value' in descriptor) {
-              proxy[prop] = target[prop]
-            } else if ('get' in descriptor) { // getter function
-              descriptor.get = computed(proxy, descriptor.get)
-              Object.defineProperty(newObj, prop, descriptor)
-            }
-          })
-        )(R.map(key => [obj, key], R.keys(obj)))
+        // R.pipe(
+        //   R.concat(R.map(key => [modelObj, key], R.keys(modelObj))),
+        //   R.forEach(([target, prop]) => {
+        //     const descriptor = Object.getOwnPropertyDescriptor(target, prop)
+        //     if ('value' in descriptor) {
+        //       proxy[prop] = target[prop]
+        //     } else if ('get' in descriptor) { // getter function
+        //       descriptor.get = computed(proxy, descriptor.get)
+        //       Object.defineProperty(newObj, prop, descriptor)
+        //     }
+        //   })
+        // )(R.map(key => [obj, key], R.keys(obj)))
         return proxy
       }
     }
@@ -173,7 +173,7 @@ class SubX {
 
 const DefaultModel = new SubX({})
 SubX.create = (obj = {}, performaceMode) => new DefaultModel(obj, performaceMode)
-SubX.runAndMonitor = runAndMonitor
-SubX.autoRun = autoRun
+// SubX.runAndMonitor = runAndMonitor
+// SubX.autoRun = autoRun
 
 export default SubX
